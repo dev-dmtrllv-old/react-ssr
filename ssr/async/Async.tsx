@@ -40,13 +40,13 @@ export class Async
 		const getData = (id: string) =>
 		{
 			let asyncData = ctx.handler.get(id);
-			if (env.isClient && !ctx.isPrefetching)
+			if (env.isClient)
 			{
+				
 				if (asyncData && asyncData.cache && (typeof asyncData.cache === "number"))
 				{
 					if (asyncData.cache < new Date().getTime())
 					{
-						console.log("purge cache")
 						ctx.handler.remove(ID);
 						asyncData = null;
 					}
@@ -67,7 +67,7 @@ export class Async
 			{
 				_data = getData(newId);
 				if (!_data)
-					setData({ data: null, error: null, cache: false });
+					setData({ data: null, error: null, cache: false, cacheVal: false });
 				else
 					setData(_data);
 				setId(newId);
