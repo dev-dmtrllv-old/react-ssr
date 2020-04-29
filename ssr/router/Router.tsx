@@ -1,24 +1,16 @@
 import React from "react";
 import { joinPaths } from "utils";
-import { RouterContext, usePrivateRouter } from "./RouterContext";
 
-export const Router: React.FC<RouterProps> = ({ base = "/", match = "all", timeout, onChange, children }) =>
+export const RouterContext = React.createContext({ base: "/" });
+
+export const Router: React.FC<RouterProps> = ({ base = "/", children }) =>
 {
-	const { router, handler } = usePrivateRouter();
-	base = joinPaths(router.base, base);
-	React.useEffect(() =>
-	{
-		timeout && handler.setTimeout(timeout);
-		onChange && handler.onChange(onChange);
-		return () =>
-		{
-			timeout && handler.removeTimeout(timeout);
-			onChange && handler.removeChangeListener(onChange);
-		};
-	}, [])
+	const routerCtx = React.useContext(RouterContext);
+
+	base = joinPaths(routerCtx.base, base);
 
 	return (
-		<RouterContext.Provider value={{ ...router, base, matchType: match, matchedRoutes: 0 }}>
+		<RouterContext.Provider value={{ base }}>
 			{children}
 		</RouterContext.Provider>
 	);
@@ -26,7 +18,4 @@ export const Router: React.FC<RouterProps> = ({ base = "/", match = "all", timeo
 
 type RouterProps = {
 	base?: string;
-	match?: "all" | "first";
-	timeout?: number;
-	onChange?: (from: string, to: string, isLoading: boolean) => void;
 };

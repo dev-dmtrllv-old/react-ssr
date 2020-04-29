@@ -3,6 +3,7 @@ import { AsyncContext, AsyncProvider } from "./AsyncContext";
 import { AsyncHandler } from "./AsyncHandler";
 import ReactDOMServer from "react-dom/server";
 import { toBase64 } from "utils";
+import { CacheContext } from "./CacheContext";
 
 export class Async
 {
@@ -24,15 +25,22 @@ export class Async
 				{jsx}
 			</AsyncProvider>
 		);
-		if (handler.shouldResolve && shouldResolve())
+		if (handler.shouldResolve)
 		{
-			await handler.resolveAll();
-			await Async.prefetch(jsx, handler);
+			if(shouldResolve())
+			{
+				await handler.resolveAll();
+				await Async.prefetch(jsx, handler);
+			}
 		}
 	};
 
 	public static readonly Component = <T extends any>(props: AsyncProps<T>) =>
 	{
+		const cacheContext = React.useContext(CacheContext);
+
+		const cache = props.cache || cacheContext.cache;
+
 		const ctx = React.useContext(AsyncContext);
 
 		const ID = props.name + toBase64(props.id);
@@ -42,7 +50,6 @@ export class Async
 			let asyncData = ctx.handler.get(id);
 			if (env.isClient)
 			{
-				
 				if (asyncData && asyncData.cache && (typeof asyncData.cache === "number"))
 				{
 					if (asyncData.cache < new Date().getTime())
@@ -75,7 +82,7 @@ export class Async
 
 			if (!_data)
 			{
-				ctx.handler.resolve(props.resolve, props.cache === undefined ? true : props.cache).then(_data => 
+				ctx.handler.resolve(props.resolve, cache).then(_data => 
 				{
 					ctx.handler.set(newId, _data);
 					setData(_data);
@@ -86,7 +93,7 @@ export class Async
 		if (!data)
 		{
 			if (ctx.isPrefetching && (props.prefetch !== false))
-				ctx.handler.prefetch(id, props.resolve, props.cache || true);
+				ctx.handler.prefetch(id, props.resolve, cache || true);
 			return props.children({ data: null, error: null, isLoading: true }) || <></>;
 		}
 

@@ -44,12 +44,12 @@ export class Client
 
 		const asyncHandler = AsyncHandler.get(async);
 		const routerHandler = RouterHandler.get();
-		routerHandler.hydrate({ appTitle });
+		// routerHandler.hydrate({ appTitle });
 
 		const app = (
-			<RouterHandler.Provider>
+			<routerHandler.Provider>
 				<Component />
-			</RouterHandler.Provider>
+			</routerHandler.Provider>
 		);
 
 		await Async.prefetch(app);

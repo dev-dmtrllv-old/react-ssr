@@ -1,33 +1,27 @@
 import React from "react";
-import { getClassFromProps } from "utils/react";
-import { useRouterHandler } from "./RouterContext";
+import { useRouter } from "./RouterContext";
 
-export const Link: React.FC<LinkProps> = ({ to, exact = false, className, children, ...rest }) =>
+export const Link: React.FC<LinkProps> = ({ to, exact, children }) =>
 {
-	const handler = useRouterHandler();
+	const { match, routeTo, withBase } = useRouter();
 
-	const onClick = (e: React.MouseEvent<HTMLAnchorElement>) =>
+	const onClick = (e: React.MouseEvent) =>
 	{
 		e.preventDefault();
-		handler.routeTo(to);
-		rest.onClick && rest.onClick(e);
-	};
+		if (!match(to, exact))
+			routeTo(withBase(to));
+	}
 
-	const cn = getClassFromProps("link", {
-		active: handler.match(to, exact),
-		className
-	});
+	const isActive = match(to, exact);
 
 	return (
-		<a className={cn} href={to} onClick={onClick}>
+		<a href={to} onClick={onClick} className={isActive ? "active" : ""}>
 			{children}
 		</a>
 	);
-};
+}
 
 type LinkProps = {
-	className?: string;
 	to: string;
 	exact?: boolean;
-	onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
 };

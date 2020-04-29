@@ -1,227 +1,86 @@
 import React from "react";
-import { RouterContext } from "./RouterContext";
 import { Async } from "ssr/async";
 import { AsyncHandler } from "ssr/async/AsyncHandler";
 
 export class RouterHandler
 {
-	// #region static fields
-	public static readonly context = React.createContext<RouterHandler>(RouterHandler.get());
+	private _redirected: false | { from: string, to: string } = false;
 
-	public static readonly Provider: React.FC<{ handler?: RouterHandler }> = ({ handler = RouterHandler.get(), children }) =>
+	public get redirected() { return this._redirected; }
+
+	public redirect = (from: string, to: string) =>
 	{
-		const [path, setPath] = React.useState(handler.path);
+		this._redirected = { from, to };
+	}
 
-		React.useEffect(() => { handler.setRouterPath = setPath; }, []);
+	private static clientInstance: RouterHandler;
+
+	public static readonly get = (path: string = env.isClient ? window.location.pathname : "/") =>
+	{
+		if (env.isServer)
+			return new RouterHandler(path);
+		if (!RouterHandler.clientInstance)
+			RouterHandler.clientInstance = new RouterHandler(path);
+		return RouterHandler.clientInstance;
+	}
+
+	public static readonly Context = React.createContext({ path: "/", handler: new RouterHandler("/") });
+
+	public path: string;
+
+	public constructor(path: string)
+	{
+		this.path = path;
+	}
+
+	private updatePath = (path: string) => { this.path = path; };
+
+	public Provider: React.FC = ({ children }) =>
+	{
+		const [path, setPath] = React.useState(this.path);
+
+		React.useEffect(() =>
+		{
+			this.updatePath = (path: string) => 
+			{
+				this.path = path;
+				setPath(path);
+			}
+		});
 
 		return (
-			<RouterHandler.context.Provider value={handler}>
-				<RouterContext.Provider value={{ path, base: "/", params: {}, matchType: "all", matchedRoutes: 0 }}>
-					{children}
-				</RouterContext.Provider>
-			</RouterHandler.context.Provider>
+			<RouterHandler.Context.Provider value={{ path, handler: this }}>
+				{children}
+			</RouterHandler.Context.Provider>
 		);
-	};
-
-	public readonly hydrate = (props: { appTitle: string; }) =>
-	{
-		Object.assign(this, props);
 	}
 
-	private static _instance: RouterHandler | null = null;
-
-	public static get(): RouterHandler
+	public readonly routeTo = async (path: string): Promise<void> =>
 	{
-		if (env.isClient)
-		{
-			if (!this._instance)
-				this._instance = new RouterHandler();
-			return this._instance;
-		}
-		return new RouterHandler();
-	}
-	// #endregion
-
-	// #region path fields
-	private startPath?: string;
-
-	private _path: string;
-
-	public get path() { return this._path; };
-
-	private _redirected: { from: string; to: string; } | false = false;
-
-	public get redirected()
-	{
-		if (this._redirected)
-			return { ...this._redirected };
-		return false;
-	}
-
-	public setRouterPath?: (path: string) => void;
-	// #endregion
-
-	// #region title fields
-	private readonly appTitle: string = "";
-
-	private _title: string = "";
-
-	public readonly setTitle = (...parts: string[]): string =>
-	{
-		const newParts: string[] = [];
-		parts = [...parts, this.appTitle];
-		parts.forEach(p => p && newParts.push(p));
-		const t = newParts.join(" - ");
-		if (t !== this._title)
-		{
-			if (env.isClient && !this.isPrefetching)
-				document.title = t;
-			this._title = t;
-		}
-		return t;
-	}
-
-	public get title() { return this._title; }
-	// #endregion
-
-	private timeout: NodeJS.Timeout | null = null;
-	private timeouts: number[] = [];
-
-	private clearTimeout = () =>
-	{
-		if (this.timeout)
-			clearTimeout(this.timeout);
-	}
-
-	public readonly setTimeout = (ms: number) => { if (!this.timeouts.includes(ms)) this.timeouts.push(ms); };
-	public readonly removeTimeout = (ms: number) => { if (this.timeouts.includes(ms)) this.timeouts.splice(this.timeouts.indexOf(ms)); };
-
-	private get maxTimeout()
-	{
-		let max = 0;
-		this.timeouts.forEach(ms => ms > max && (max = ms));
-		return max;
-	}
-
-	private readonly onChangeListeners: OnChangeCallback[] = [];
-	public readonly isPrefetching: boolean = false;
-
-	public constructor({ isPrefetching, path }: RouterHandlerOptions = {})
-	{
-		this._path = path || "/";
-		this.isPrefetching = isPrefetching || false;
-		if (env.isClient)
-		{
-			this._title = document.title;
-
-			if (!isPrefetching)
-			{
-				this._path = window.location.pathname;
-
-				if (location.pathname !== this.path)
-					window.history.replaceState(null, this.title, this.path);
-				window.addEventListener("popstate", (e) => 
-				{
-					this.routeTo(window.location.pathname, true);
-				});
-			}
-		}
-		else if (env.isServer)
-		{
-			this.setTitle("");
-		}
-	}
-
-	public readonly onChange = (fn: OnChangeCallback) =>
-	{
-		if (!this.onChangeListeners.includes(fn))
-			this.onChangeListeners.push(fn);
-	}
-
-	public readonly removeChangeListener = (fn: OnChangeCallback) => 
-	{
-		const i = this.onChangeListeners.indexOf(fn);
-		if (i > -1)
-			this.onChangeListeners.splice(i, 1);
-	}
-
-	public readonly routeTo = (path: string, fromPopState: boolean = false): any =>
-	{
-		if (this.timeout)
-			this.clearTimeout();
-
-		const from = this.path;
-		const to = path;
-
-		if (from === to)
-		{
-			this.startPath = undefined;
-			this.onChangeListeners.forEach(l => l(from, to, false));
+		if (!env.isClient)
 			return;
-		}
 
-		if (this.startPath && (this.startPath === path))
+		if (path !== this.path)
 		{
-			this.startPath = undefined;
-			this.onChangeListeners.forEach(l => l(from, to, false));
-			throw new Error(`Redirect cycle detected!`);
-		}
-		let shouldPrefetch = true;
+			const handler = new RouterHandler(path);
 
-		this.onChangeListeners.forEach(l => { (l(from, to, true) === false) && (shouldPrefetch = false) });
-
-		const prefetch = async (prefetch: boolean = true) =>
-		{
-			if (env.isClient && !fromPopState)
-				window.history.pushState(null, this.title, this.path);
-
-			const handler = new RouterHandler({
-				appTitle: this.appTitle,
-				isPrefetching: true,
-				path: to
+			await Async.prefetch(
+				<handler.Provider>
+					{Async["app"]}
+				</handler.Provider>
+				, AsyncHandler.get(), () => 
+			{
+				if (handler.redirected)
+					return false;
+				return true;
 			});
 
-			if (prefetch)
-				await Async.prefetch((
-					<RouterHandler.Provider handler={handler}>
-						{Async["app"] || null}
-					</RouterHandler.Provider>
-				), AsyncHandler.get(), () => !handler.redirected);
-
 			if (handler.redirected)
-			{
-				const redirected = handler.redirected;
-				if (redirected.to === this.path)
-				{
-					const { to, from } = redirected;
-					this.onChangeListeners.forEach(l => l(from, to, false));
-					return this.startPath = undefined;
-				}
+				return this.routeTo(handler.redirected.to);
 
-				if (!this.startPath)
-					this.startPath = to;
+			this.updatePath(path);
 
-				return this.routeTo(redirected.to);
-			}
-
-			this.startPath = undefined;
-			this._redirected = false;
-			this._path = path;
-
-			if (env.isClient && !fromPopState)
-				window.history.replaceState(null, handler.title, this.path);
-
-			if (this.setRouterPath)
-				this.setRouterPath(path);
-
-			this.onChangeListeners.forEach(l => l(from, to, false));
-			this.timeout = null;
 		}
-
-		if (shouldPrefetch)
-			this.timeout = setTimeout(prefetch, this.maxTimeout);
-		else
-			prefetch(false);
 	}
 
 	public readonly match = (path: string, exact: boolean = false, matchPath: string = this.path) =>
@@ -268,21 +127,15 @@ export class RouterHandler
 		}
 		return params;
 	}
-
-	public readonly redirectTo = (path: string) =>
-	{
-		if (!this._redirected)
-			this._redirected = {
-				from: this.path,
-				to: path
-			};
-	}
 }
 
-type OnChangeCallback = (from: string, to: string, isLoading: boolean) => void | boolean;
+export const StaticRouterContext = React.createContext({ path: env.isClient ? window.location.pathname : "/" });
 
-type RouterHandlerOptions = {
-	path?: string;
-	appTitle?: string;
-	isPrefetching?: boolean;
-};
+export const StaticRouter: React.FC<{ path: string }> = ({ children, path }) =>
+{
+	return (
+		<StaticRouterContext.Provider value={{ path }}>
+			{children}
+		</StaticRouterContext.Provider>
+	);
+}

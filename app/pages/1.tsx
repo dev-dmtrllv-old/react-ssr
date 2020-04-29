@@ -5,7 +5,7 @@ import { jsx } from "utils";
 import "../test.scss";
 
 export default () => (
-	<api.users.get.Component cache={5000}>
+	<api.users.get.Component>
 		{({ data, error, isLoading }) => 
 		{
 			if(isLoading)

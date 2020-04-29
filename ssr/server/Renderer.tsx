@@ -99,7 +99,7 @@ export class Renderer
 		const { getStyles, getScripts } = this.manifest;
 
 		const asyncHandler = new AsyncHandler();
-		const router = new RouterHandler({ path: this.req.url, appTitle: this.props.title });
+		const router = new RouterHandler(this.req.url);
 		
 		let appString = "";
 
@@ -112,16 +112,16 @@ export class Renderer
 			const Component = imported.default || imported;
 
 			const app = (
-				<RouterHandler.Provider handler={router}>
+				<router.Provider>
 					<FetchProvider fetch={this.fetch}>
 						<Component />
 					</FetchProvider>
-				</RouterHandler.Provider>
+				</router.Provider>
 			);
 
 			await Async.prefetch(app, asyncHandler, () => router.redirected === false);
 
-			if (router.redirected !== false)
+			if (router.redirected)
 				return { redirected: router.redirected };
 
 			appString = ReactDOMServer.renderToString(
@@ -141,7 +141,8 @@ export class Renderer
 		scripts.push(...getScripts(...dynamicPaths));
 
 		return {
-			title: router.title === "" ? this.props.title : router.title,
+			title: this.props.title,
+			// title: router.title === "" ? this.props.title : router.title,
 			redirected: false,
 			appString: appString,
 			styles,

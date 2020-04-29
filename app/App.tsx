@@ -1,21 +1,24 @@
 import React from "react";
-import { Dynamic } from "ssr/async";
-import { Router, Page, Route, Link } from "ssr/router";
+import { Router, Link, Route, Redirect } from "ssr/router";
 
 export default () =>
 {
-	const [isLoading, setLoading] = React.useState(false);
 	return (
-		<Router onChange={(from, to, loading) => { setLoading(loading); }}>
-			<Link to="/">Home</Link>
-			<Link to="/1">Users 1</Link>
-			<Link to="/2">Users 2</Link>
-			<Route exact path="/">
-				<h1>Home</h1>
+		<Router>
+			<Link to="/home">Home</Link>
+			<Link to="/test">Test</Link>
+			<Route path="/home"><h1>Home</h1></Route>
+			<Route path="/test">
+				<Router base="/test">
+					<h1>Test</h1>
+					<br/>
+					<Link to="/cat">Cat</Link>
+					<Link to="/dog">Dog</Link>
+					<Route exact path="/cat"><h1>Cat</h1></Route>
+					<Route exact path="/dog"><h1>Dog</h1></Route>
+				</Router>
 			</Route>
-			<Page exact path="/1" title="users 1" />
-			<Page exact path="/2" title="users 2" />
-			{isLoading && <h1>Loading...</h1>}
+			<Redirect exact from="/" to="/home" />
 		</Router>
-	)
+	);
 };
