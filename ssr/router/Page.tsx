@@ -1,12 +1,12 @@
 import React from "react";
 import { joinPaths } from "utils";
-import { Dynamic } from "ssr/async";
+import { Dynamic, AsyncFC } from "ssr/async";
 import { toCamelCase } from "utils/string";
 
 import { useRouterHandler, useRouter } from "./RouterContext";
 import { Route } from "./Route";
 
-export const Page: React.FC<PageProps> = ({ path, exact = false, page, onError, title, ...rest }) =>
+export const Page: AsyncFC<PageProps> = ({ path, exact = false, page, onError, title, ...rest }) =>
 {
 	const handler = useRouterHandler();
 	const { base } = useRouter();
@@ -50,5 +50,4 @@ type PageProps = {
 	page?: string;
 	onError?: (err: Error) => JSX.Element | string | null | undefined | void;
 	title?: string;
-	prefetch?: boolean;
 };

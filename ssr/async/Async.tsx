@@ -37,19 +37,37 @@ export class Async
 
 		const ID = props.name + toBase64(props.id);
 
-		const [data, setData] = React.useState(ctx.handler.get(ID));
+		const getData = (id: string) =>
+		{
+			let asyncData = ctx.handler.get(id);
+			if (env.isClient && !ctx.isPrefetching)
+			{
+				if (asyncData && asyncData.cache && (typeof asyncData.cache === "number"))
+				{
+					if (asyncData.cache < new Date().getTime())
+					{
+						console.log("purge cache")
+						ctx.handler.remove(ID);
+						asyncData = null;
+					}
+				}
+			}
+			return asyncData;
+		}
+
+		const [data, setData] = React.useState(getData(ID));
 		const [id, setId] = React.useState(ID);
 
 		React.useEffect(() => 
 		{
 			let _data = data;
-			
+
 			const newId = props.name + toBase64(props.id);
 			if (newId !== id)
 			{
-				_data = ctx.handler.get(newId);
+				_data = getData(newId);
 				if (!_data)
-					setData({ data: null, error: null });
+					setData({ data: null, error: null, cache: false });
 				else
 					setData(_data);
 				setId(newId);
@@ -57,7 +75,7 @@ export class Async
 
 			if (!_data)
 			{
-				ctx.handler.resolve(props.resolve).then(_data => 
+				ctx.handler.resolve(props.resolve, props.cache === undefined ? true : props.cache).then(_data => 
 				{
 					ctx.handler.set(newId, _data);
 					setData(_data);
@@ -68,7 +86,7 @@ export class Async
 		if (!data)
 		{
 			if (ctx.isPrefetching && (props.prefetch !== false))
-				ctx.handler.prefetch(id, props.resolve);
+				ctx.handler.prefetch(id, props.resolve, props.cache || true);
 			return props.children({ data: null, error: null, isLoading: true }) || <></>;
 		}
 
@@ -85,10 +103,11 @@ type AsyncProps<T> = {
 	resolve: AsyncResolver<T>;
 	prefetch?: boolean;
 	children: AsyncRender<T>;
+	cache?: boolean | number;
 };
 
 export type AsyncRender<T> = (props: { data: T | null, error: Error | null, isLoading: boolean }) => JSX.Element | null;
 
 export type AsyncResolver<T> = () => Promise<T>;
 
-export type AsyncFC<P> = React.FC<P & { prefetch?: boolean }>;
+export type AsyncFC<P> = React.FC<P & { prefetch?: boolean, cache?: number | boolean; }>;

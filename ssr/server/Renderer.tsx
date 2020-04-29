@@ -99,7 +99,7 @@ export class Renderer
 		const { getStyles, getScripts } = this.manifest;
 
 		const asyncHandler = new AsyncHandler();
-		const router = new RouterHandler();
+		const router = new RouterHandler({ path: this.req.url, appTitle: this.props.title });
 		
 		let appString = "";
 

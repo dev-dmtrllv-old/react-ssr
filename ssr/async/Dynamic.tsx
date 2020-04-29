@@ -29,7 +29,7 @@ export const removeDynamicData = (asyncData: AsyncData) =>
 }
 
 export const Dynamic: AsyncFC<DynamicProps> = (props) => (
-	<Async.Component id={props.path} name={NAME} prefetch={props.prefetch} resolve={async () => 
+	<Async.Component cache={props.cache} id={props.path} name={NAME} prefetch={props.prefetch} resolve={async () => 
 	{
 		const module = await props.import();
 		if(module.default)
@@ -51,7 +51,7 @@ type DynamicProps = {
 	import: () => Promise<any>;
 	path: string;
 	children?: (props: DynamicRenderProps) => JSX.Element | null;
-	prefetch?: boolean;
+	// prefetch?: boolean;
 };
 
 type DynamicRenderProps = {

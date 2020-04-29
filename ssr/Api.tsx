@@ -2,7 +2,7 @@ import React from "react";
 import path from "path";
 import { toURLQuery } from "utils";
 import type { Response, Request } from "express";
-import { Fetch } from "./async";
+import { Fetch, AsyncFC } from "./async";
 
 export class Api
 {
@@ -124,12 +124,10 @@ export type ApiMethod<P = undefined, R = any> = (props: P) => R;
 
 type ExtractPromise<T> = T extends Promise<infer P> ? P : T;
 
-type FetchApiComponent<T extends Api, K extends keyof ExtractMethods<T>> = React.FC<T[K] extends ApiMethod<undefined, infer R> ? {
+type FetchApiComponent<T extends Api, K extends keyof ExtractMethods<T>> = AsyncFC<T[K] extends ApiMethod<undefined, infer R> ? {
 	children: (props: { data: ExtractPromise<R> | null, error: Error | null, isLoading: boolean }) => JSX.Element | null;
-	prefetch?: boolean;
 } : T[K] extends ApiMethod<infer P, infer R> ? {
 	data: P;
-	prefetch?: boolean;
 	children: (props: { data: ExtractPromise<R> | null, error: Error | null, isLoading: boolean }) => JSX.Element | null;
 } : {}>;
 
