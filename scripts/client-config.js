@@ -107,7 +107,7 @@ const createClientConfig = ({ name = "app", isDev = true, output = "public", onM
 				name: "runtime"
 			},
 			splitChunks: {
-				chunks: "all",
+				chunks: "async",
 				cacheGroups: {
 					default: false,
 					vendors: false,
@@ -116,13 +116,6 @@ const createClientConfig = ({ name = "app", isDev = true, output = "public", onM
 						test: /node_modules/,
 						priority: 20,
 						name: "vendor",
-					},
-					common: {
-						name: 'common',
-						chunks: 'async',
-						priority: 10,
-						reuseExistingChunk: true,
-						enforce: true
 					}
 				}
 			}
