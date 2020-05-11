@@ -1,15 +1,12 @@
 
 const pluginName = "ManifestPlugin";
 
-class ManifestPlugin
-{
-	constructor(props)
-	{
+class ManifestPlugin {
+	constructor(props) {
 		this.props = props;
 	}
 
-	transformPath(p)
-	{
+	transformPath(p) {
 		if (p.startsWith("."))
 			return p.substr(1, p.length);
 		else if (!p.startsWith("/"))
@@ -18,19 +15,15 @@ class ManifestPlugin
 			return p;
 	}
 
-	apply(compiler)
-	{
-		compiler.hooks.emit.tapAsync(pluginName, (c, cb) =>
-		{
+	apply(compiler) {
+		compiler.hooks.emit.tapAsync(pluginName, (c, cb) => {
 			const manifest = {
 				main: {},
 				chunks: {}
 			};
 
-			for (const { files, name, id } of c.chunks)
-			{
-				if (name)
-				{
+			for (const { files, name, id } of c.chunks) {
+				if (name) {
 					manifest.main[name === "main" ? "app" : name] = {
 						id,
 						files: files.map((p) => this.transformPath(p))
@@ -38,16 +31,12 @@ class ManifestPlugin
 				}
 			}
 
-			for (const { chunks, origins } of c.chunkGroups)
-			{
+			for (const { chunks, origins } of c.chunkGroups) {
 				const origin = origins && origins[0];
-				if (origin)
-				{
+				if (origin) {
 					const fileName = origin.request;
-					if (fileName)
-					{
-						for (const { id, files } of chunks)
-						{
+					if (fileName) {
+						for (const { id, files } of chunks) {
 							manifest.chunks[fileName] = {
 								id,
 								files: files.map((p) => this.transformPath(p))
@@ -56,7 +45,6 @@ class ManifestPlugin
 					}
 				}
 			}
-
 			this.props.onManifest(manifest);
 			cb();
 		});

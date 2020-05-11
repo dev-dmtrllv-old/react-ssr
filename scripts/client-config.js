@@ -1,3 +1,4 @@
+const fs = require("fs");
 const webpack = require("webpack");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
@@ -5,8 +6,7 @@ const CopyPlugin = require("copy-webpack-plugin");
 const { ManifestPlugin } = require("./manifest-plugin");
 const { aliases, resolve, rootPath } = require("./paths");
 
-const createClientConfig = ({ name = "app", isDev = true, output = "public", onManifest, entry = "app/index.tsx", staticPath = "static" }) =>
-{
+const createClientConfig = ({ name = "app", isDev = true, output = "public", onManifest, entry = "app/index.tsx", staticPath = "static" }) => {
 	const plugins = [
 		new ManifestPlugin({ onManifest }),
 		new webpack.DefinePlugin({
@@ -14,12 +14,12 @@ const createClientConfig = ({ name = "app", isDev = true, output = "public", onM
 		}),
 		new MiniCssExtractPlugin({
 			filename: `css/[name].bundle.css`,
-			chunkFilename: `css/[id].chunk.css`,
+			chunkFilename: `css/${isDev ? "[id]" : "[id].[chunkhash]"}.chunk.css`,
 			ignoreOrder: false
 		}),
 	];
 
-	if (!isDev)
+	if (!isDev && fs.existsSync(resolve(staticPath)))
 		plugins.push(new CopyPlugin([{ from: resolve(staticPath), to: resolve("build", output) }]));
 
 	return ({
@@ -33,8 +33,8 @@ const createClientConfig = ({ name = "app", isDev = true, output = "public", onM
 		devtool: "cheap-module-source-map",
 		output: {
 			path: resolve("build", output),
-			filename: "js/[name].bundle.js",
-			chunkFilename: `js/chunks/[id].chunk.js`,
+			filename: `js/[name].bundle.js`,
+			chunkFilename: `js/chunks/${isDev ? "[id]" : "[id].[chunkhash]"}.chunk.js`,
 			publicPath: "/"
 		},
 		resolve: {
