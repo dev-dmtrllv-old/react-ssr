@@ -3,10 +3,10 @@ import { Router, Link, Route, Redirect } from "ssr/router";
 import { Dynamic } from "ssr/async";
 import { api } from "api";
 
-const Page: React.FC<{ exact: boolean, path?: string, page: string }> = ({ exact, path, page }) =>
+const Page: React.FC<{ exact: boolean, path?: string, page: string, title?: string }> = ({ exact, path, page, title }) =>
 {
 	return (
-		<Route exact={exact} path={path || `/${page}`}>
+		<Route exact={exact} path={path || `/${page}`} title={title}>
 			<Dynamic import={() => import(`./pages/${page}`)} path={`./${page}`}>
 				{({ Component, error }) => 
 				{
@@ -35,7 +35,7 @@ export default () =>
 					<br />
 					<Link to="/1">1</Link>
 					<Link to="/2">2</Link>
-					<Page exact page="1" />
+					<Page exact page="1" title="111"/>
 					<Page exact page="2" />
 				</Router>
 			</Route>

@@ -101,7 +101,7 @@ export class Renderer
 		const { getStyles, getScripts } = this.manifest;
 
 		const asyncHandler = new AsyncHandler();
-		const router = new RouterHandler(this.req.url);
+		const router = new RouterHandler(this.props.title, this.req.url);
 		
 		let appString = "";
 
@@ -139,12 +139,11 @@ export class Renderer
 		}
 
 		const dynamicPaths = getDynamicPaths(asyncHandler.data);
-		console.log(dynamicPaths);
 		styles.push(...getStyles(...dynamicPaths));
 		scripts.push(...getScripts(...dynamicPaths));
 
 		return {
-			title: this.props.title,
+			title: router.title,
 			redirected: false,
 			appString: appString,
 			styles,

@@ -12,7 +12,6 @@ import { getType } from "mime";
 import { Renderer, RendererOptions } from "./Renderer";
 import { Manifest } from "./Manifest";
 import { ApiRoutes, ApiType, Api } from "ssr/Api";
-import { setSSRApiData } from "ssr/SSRData";
 
 export class Server
 {
@@ -83,7 +82,6 @@ export class Server
 	{
 		this.flattenApiRoutes(routes);
 		this.clientApiRoutes = this.createClientApi(routes);
-		setSSRApiData(this.clientApiRoutes);
 		
 		this.app.use(path, async (req, res) => 
 		{

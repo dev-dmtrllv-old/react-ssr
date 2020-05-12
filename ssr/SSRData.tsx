@@ -10,10 +10,6 @@ export type SSRData = {
 
 let ssrClientData: any = null;
 
-let ssrApiData = {};
-
-export const setSSRApiData = (api: any) => ssrApiData = api;
-
 export const getSSRData = (): SSRData =>
 {
 	if (env.isClient)
@@ -25,7 +21,7 @@ export const getSSRData = (): SSRData =>
 	return {
 		async: {},
 		appTitle: "",
-		api: ssrApiData
+		api: {}
 	};
 }
 

@@ -4,6 +4,19 @@ import { AsyncHandler } from "ssr/async/AsyncHandler";
 
 export class RouterHandler
 {
+	private static clientInstance: RouterHandler;
+
+	public static readonly get = (title: string, path: string = env.isClient ? window.location.pathname : "/") =>
+	{
+		if (env.isServer)
+			return new RouterHandler(title, path);
+		if (!RouterHandler.clientInstance)
+			RouterHandler.clientInstance = new RouterHandler(title, path);
+		return RouterHandler.clientInstance;
+	}
+
+	public static readonly Context = React.createContext({ path: "/", handler: new RouterHandler("", "/", false) });
+
 	private _redirected: false | { from: string, to: string } = false;
 
 	public get redirected() { return this._redirected; }
@@ -13,24 +26,32 @@ export class RouterHandler
 		this._redirected = { from, to };
 	}
 
-	private static clientInstance: RouterHandler;
-
-	public static readonly get = (path: string = env.isClient ? window.location.pathname : "/") =>
+	public setTitle = (...titles: string[]) =>
 	{
-		if (env.isServer)
-			return new RouterHandler(path);
-		if (!RouterHandler.clientInstance)
-			RouterHandler.clientInstance = new RouterHandler(path);
-		return RouterHandler.clientInstance;
+		const t = titles.length > 0 ? `${titles.join(" - ")} - ${this.appTitle}` : this.appTitle;
+		if (t !== this._title)
+		{
+			this._title = t;
+			if (env.isClient && !this.isPrefetching)
+				document.title = t;
+		}
 	}
 
-	public static readonly Context = React.createContext({ path: "/", handler: new RouterHandler("/") });
+	private _title: string;
+
+	public get title() { return this._title; }
+
+	private readonly isPrefetching: boolean = false;
+	public readonly appTitle: string;
 
 	public path: string;
 
-	public constructor(path: string)
+	public constructor(title: string, path: string, isPrefetching: boolean = false)
 	{
+		this.appTitle = title;
+		this.setTitle();
 		this.path = path;
+		this.isPrefetching = isPrefetching;
 	}
 
 	private updatePath = (path: string) => { this.path = path; };
@@ -62,7 +83,7 @@ export class RouterHandler
 
 		if (path !== this.path)
 		{
-			const handler = new RouterHandler(path);
+			const handler = new RouterHandler(this.appTitle, path, true);
 
 			await Async.prefetch(
 				<handler.Provider>
@@ -79,7 +100,6 @@ export class RouterHandler
 				return this.routeTo(handler.redirected.to);
 
 			this.updatePath(path);
-
 		}
 	}
 

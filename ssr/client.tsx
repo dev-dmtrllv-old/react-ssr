@@ -125,7 +125,7 @@ export class Client
 		const { async, appTitle } = getSSRData();
 
 		const asyncHandler = AsyncHandler.get(async);
-		const routerHandler = RouterHandler.get();
+		const routerHandler = RouterHandler.get(appTitle);
 
 		const app = (
 			<routerHandler.Provider>

@@ -7,6 +7,6 @@ server.app.get("/favicon.ico", (req, res) => res.send(null));
 
 server.useApi({ routes: apiRoutes });
 
-server.useRenderer("*", { title: "SSR", app: () => import("../app/App") });
+server.useRenderer("*", { title: "SSR - test", app: () => import("../app/App") });
 
 server.start();
