@@ -5,9 +5,14 @@ import { fromBase64, toBase64 } from "utils";
 export type SSRData = {
 	async: AsyncData;
 	appTitle: string;
+	api: any;
 };
 
 let ssrClientData: any = null;
+
+let ssrApiData = {};
+
+export const setSSRApiData = (api: any) => ssrApiData = api;
 
 export const getSSRData = (): SSRData =>
 {
@@ -19,7 +24,8 @@ export const getSSRData = (): SSRData =>
 	}
 	return {
 		async: {},
-		appTitle: ""
+		appTitle: "",
+		api: ssrApiData
 	};
 }
 

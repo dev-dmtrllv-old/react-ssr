@@ -1,10 +1,14 @@
-import { Api } from "ssr/Api";
-import { Users } from "./Users";
-import { Users2 } from "./Users2";
+import { Client } from "ssr/client";
+import type { ApiRoutesType } from "./routes";
+import type { ClientApi } from "ssr/Api";
 
-export const apiRoutes = Api.createRoutes({
-	users: Users,
-	users2: Users2
-});
+let api: ClientApi<ApiRoutesType>;
 
-export const api = Api.createClientApi(apiRoutes);
+if (env.isServer)
+	api = Client.createServerApi(require("./routes").apiRoutes);
+else
+	api = Client.createApi<ApiRoutesType>();
+
+export {
+	api
+};

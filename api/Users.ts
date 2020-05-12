@@ -13,6 +13,7 @@ export class Users extends Api
 {
 	post = (user: User) =>
 	{
+		console.log("TEST!@#")
 		const i = users.push(user) - 1;
 		return {
 			success: i > -1,

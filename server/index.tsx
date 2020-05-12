@@ -1,5 +1,5 @@
 import { Server } from "ssr/server";
-import { apiRoutes } from "api";
+import { apiRoutes } from "api/routes";
 
 const server = new Server();
 

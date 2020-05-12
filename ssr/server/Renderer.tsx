@@ -73,11 +73,13 @@ export class Renderer
 	private readonly styles: string[] = []
 	private readonly scripts: string[] = [];
 	public readonly manifest: Manifest;
+	private readonly api: any = {};
 	public readonly fetch: FetchFunction<any, any>;
 
-	public constructor(manifest: Manifest, props: RendererOptions, req: Request, res: Response, next: NextFunction)
+	public constructor(manifest: Manifest, api: any, props: RendererOptions, req: Request, res: Response, next: NextFunction)
 	{
 		this.manifest = manifest;
+		this.api = api;
 		this.props = props;
 		this.req = req;
 		this.res = res;
@@ -137,19 +139,20 @@ export class Renderer
 		}
 
 		const dynamicPaths = getDynamicPaths(asyncHandler.data);
+		console.log(dynamicPaths);
 		styles.push(...getStyles(...dynamicPaths));
 		scripts.push(...getScripts(...dynamicPaths));
 
 		return {
 			title: this.props.title,
-			// title: router.title === "" ? this.props.title : router.title,
 			redirected: false,
 			appString: appString,
 			styles,
 			scripts,
 			ssrData: {
 				appTitle: this.props.title,
-				async: removeDynamicData(asyncHandler.data)
+				async: removeDynamicData(asyncHandler.data),
+				api: this.api
 			}
 		};
 	}

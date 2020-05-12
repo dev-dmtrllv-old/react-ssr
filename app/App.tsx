@@ -1,5 +1,26 @@
 import React from "react";
 import { Router, Link, Route, Redirect } from "ssr/router";
+import { Dynamic } from "ssr/async";
+import { api } from "api";
+
+const Page: React.FC<{ exact: boolean, path?: string, page: string }> = ({ exact, path, page }) =>
+{
+	return (
+		<Route exact={exact} path={path || `/${page}`}>
+			<Dynamic import={() => import(`./pages/${page}`)} path={`./${page}`}>
+				{({ Component, error }) => 
+				{
+					if (Component)
+						return <Component />;
+					return null;
+				}}
+			</Dynamic>
+		</Route>
+	)
+}
+
+if(env.isClient)
+	api.users.get().then(r => console.log(r.users));
 
 export default () =>
 {
@@ -11,11 +32,11 @@ export default () =>
 			<Route path="/test">
 				<Router base="/test">
 					<h1>Test</h1>
-					<br/>
-					<Link to="/cat">Cat</Link>
-					<Link to="/dog">Dog</Link>
-					<Route exact path="/cat"><h1>Cat</h1></Route>
-					<Route exact path="/dog"><h1>Dog</h1></Route>
+					<br />
+					<Link to="/1">1</Link>
+					<Link to="/2">2</Link>
+					<Page exact page="1" />
+					<Page exact page="2" />
 				</Router>
 			</Route>
 			<Redirect exact from="/" to="/home" />

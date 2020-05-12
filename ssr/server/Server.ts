@@ -11,8 +11,8 @@ import { getType } from "mime";
 
 import { Renderer, RendererOptions } from "./Renderer";
 import { Manifest } from "./Manifest";
-import { ApiRoutes, ApiType } from "ssr/Api";
-import { FetchFunction } from "ssr/async";
+import { ApiRoutes, ApiType, Api } from "ssr/Api";
+import { setSSRApiData } from "ssr/SSRData";
 
 export class Server
 {
@@ -28,6 +28,8 @@ export class Server
 
 	private apiRoutes: { [path: string]: ApiType<any> } = {};
 
+	private clientApiRoutes = {};
+
 	private flattenApiRoutes = (routes: ApiRoutes<any>) =>
 	{
 		for (const k in routes)
@@ -38,6 +40,28 @@ export class Server
 			else
 				this.flattenApiRoutes(r);
 		}
+	}
+
+	private createClientApi = (routes: ApiRoutes<any>) =>
+	{
+		const clientApi: any = {};
+		for (const k in routes)
+		{
+			const r: any = routes[k];
+			if (r.path && r.type)
+			{
+				const methods: string[] = [];
+				const _api = new r.type(null, null);
+				for (const type in _api)
+					if (_api[type] !== undefined && Api.methodTypes.includes(type))
+						methods.push(type);
+				if (methods.length > 0)
+					clientApi[k] = methods;
+			}
+			else
+				clientApi[k] = this.createClientApi(r);
+		}
+		return clientApi;
 	}
 
 	public constructor({ host = "localhost", port = 3000, staticPath }: ServerOptions = {})
@@ -58,6 +82,9 @@ export class Server
 	public useApi({ routes, path = "/api" }: ApiProps)
 	{
 		this.flattenApiRoutes(routes);
+		this.clientApiRoutes = this.createClientApi(routes);
+		setSSRApiData(this.clientApiRoutes);
+		
 		this.app.use(path, async (req, res) => 
 		{
 			const apiPath = path + req.url;
@@ -194,7 +221,7 @@ export class Server
 							request.end();
 						}
 					});
-				const renderer = new Renderer(this.manifest, props, req, res, next);
+				const renderer = new Renderer(this.manifest, this.clientApiRoutes, props, req, res, next);
 				if (handle)
 					handle(renderer);
 				else
